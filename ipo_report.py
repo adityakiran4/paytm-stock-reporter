@@ -1,10 +1,9 @@
 import os
 import requests
-import pandas as pd
 import smtplib
 from bs4 import BeautifulSoup
-from datetime import datetime, timedelta
 from email.mime.text import MIMEText
+from datetime import datetime
 
 EMAIL = os.environ["EMAIL"]
 APP_PASSWORD = os.environ["APP_PASSWORD"]
@@ -36,49 +35,78 @@ def build_report():
 
     url = "https://www.ipomarket.in/ipo/listed"
 
-    html = requests.get(
+    response = requests.get(
         url,
         headers={
             "User-Agent": "Mozilla/5.0"
         },
         timeout=30
-    ).text
+    )
+
+    soup = BeautifulSoup(
+        response.text,
+        "html.parser"
+    )
+
+    text = soup.get_text(
+        "\n",
+        strip=True
+    )
+
+    lines = [
+        line.strip()
+        for line in text.split("\n")
+        if line.strip()
+    ]
+
+    report_sections = []
+
+    keywords = [
+        "%",
+        "Listed",
+        "IPO",
+        "Price"
+    ]
+
+    for i, line in enumerate(lines):
+
+        if "%" in line:
+
+            start = max(0, i - 8)
+            end = min(len(lines), i + 3)
+
+            section = "\n".join(
+                lines[start:end]
+            )
+
+            report_sections.append(section)
 
     body = (
         "INDIA IPO REPORT\n"
-        "===================\n\n"
+        "========================\n\n"
+        f"Generated: {datetime.now()}\n\n"
     )
 
-    keywords = [
-        "Listed Date",
-        "Listing Price",
-        "Listing Gain"
-    ]
+    if report_sections:
 
-    found = []
+        body += (
+            "Recent IPO Listing Records\n"
+            "-------------------------\n\n"
+        )
 
-    for line in html.splitlines():
+        body += "\n\n=================================\n\n".join(
+            report_sections[:20]
+        )
 
-        for keyword in keywords:
+    else:
 
-            if keyword in line:
-
-                found.append(line.strip())
-
-    body += (
-        f"Page downloaded successfully.\n\n"
-        f"Keyword matches found: {len(found)}\n\n"
-    )
-
-    body += "\n".join(found[:100])
-
-    body += (
-        f"\n\nGenerated: "
-        f"{datetime.now()}"
-    )
+        body += (
+            "No IPO records found.\n"
+            "Source page loaded successfully."
+        )
 
     send_email(
-        "IPO Report Test",
+        "India IPO Daily Report",
         body
     )
 
