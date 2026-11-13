@@ -59,26 +59,18 @@ def create_report():
 
     html = fetch_page()
 
-    soup = BeautifulSoup(
-        html,
-        "html.parser"
-    )
+    soup = BeautifulSoup(html, "html.parser")
 
-    text = soup.get_text(
-        "\n",
-        strip=True
-    )
+    body = f"""
+TITLE:
+{soup.title.text}
 
-    body = (
-        "IPO SCRAPER TEST\n\n"
-        "Below are first 4000 characters "
-        "seen after JavaScript execution:\n\n"
-    )
-
-    body += text[:4000]
+URL THAT LOADED:
+https://www.motilaloswal.com/ipos
+"""
 
     send_email(
-        "IPO Playwright Debug",
+        "IPO PAGE DEBUG",
         body
     )
 
