@@ -19,6 +19,8 @@ jobs:
         with:
           python-version: '3.13'
 
+      - run: pip install -r requirements.txt
+
       - run: python ipo_report.py
         env:
           EMAIL: ${{ secrets.EMAIL }}
