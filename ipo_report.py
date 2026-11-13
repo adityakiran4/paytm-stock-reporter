@@ -1,8 +1,10 @@
 import os
+import requests
+import pandas as pd
 import smtplib
-from email.mime.text import MIMEText
-from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
+from datetime import datetime, timedelta
+from email.mime.text import MIMEText
 
 EMAIL = os.environ["EMAIL"]
 APP_PASSWORD = os.environ["APP_PASSWORD"]
@@ -30,49 +32,55 @@ def send_email(subject, body):
     smtp.quit()
 
 
-def fetch_page():
+def build_report():
 
-    with sync_playwright() as p:
+    url = "https://www.ipomarket.in/ipo/listed"
 
-        browser = p.chromium.launch(
-            headless=True
-        )
+    html = requests.get(
+        url,
+        headers={
+            "User-Agent": "Mozilla/5.0"
+        },
+        timeout=30
+    ).text
 
-        page = browser.new_page()
+    body = (
+        "INDIA IPO REPORT\n"
+        "===================\n\n"
+    )
 
-        page.goto(
-            "https://www.motilaloswal.com/ipos",
-            wait_until="networkidle",
-            timeout=60000,
-        )
+    keywords = [
+        "Listed Date",
+        "Listing Price",
+        "Listing Gain"
+    ]
 
-        page.wait_for_timeout(5000)
+    found = []
 
-        html = page.content()
+    for line in html.splitlines():
 
-        browser.close()
+        for keyword in keywords:
 
-        return html
+            if keyword in line:
 
+                found.append(line.strip())
 
-def create_report():
+    body += (
+        f"Page downloaded successfully.\n\n"
+        f"Keyword matches found: {len(found)}\n\n"
+    )
 
-    html = fetch_page()
+    body += "\n".join(found[:100])
 
-    soup = BeautifulSoup(html, "html.parser")
-
-    body = f"""
-TITLE:
-{soup.title.text}
-
-URL THAT LOADED:
-https://www.motilaloswal.com/ipos
-"""
+    body += (
+        f"\n\nGenerated: "
+        f"{datetime.now()}"
+    )
 
     send_email(
-        "IPO PAGE DEBUG",
+        "IPO Report Test",
         body
     )
 
 
-create_report()
+build_report()
