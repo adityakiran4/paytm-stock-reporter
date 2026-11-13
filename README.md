@@ -1,0 +1,1 @@
+# paytm-stock-reporter
