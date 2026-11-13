@@ -3,7 +3,7 @@ name: Paytm Report
 on:
 schedule:
   - cron: '30 3 * * *'
-  - cron: '15 10 * * *'
+  
 
   workflow_dispatch:
 
