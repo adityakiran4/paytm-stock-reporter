@@ -48,10 +48,7 @@ def build_report():
         "html.parser"
     )
 
-    text = soup.get_text(
-        "\n",
-        strip=True
-    )
+    text = soup.get_text("\n", strip=True)
 
     lines = [
         line.strip()
@@ -59,55 +56,61 @@ def build_report():
         if line.strip()
     ]
 
-    report_sections = []
-
-    keywords = [
-        "%",
-        "Listed",
-        "IPO",
-        "Price"
-    ]
+    report_rows = []
 
     for i, line in enumerate(lines):
 
-        if "%" in line:
+        if "%" in line and "+" in line:
 
-            start = max(0, i - 8)
-            end = min(len(lines), i + 3)
+            try:
 
-            section = "\n".join(
-                lines[start:end]
-            )
+                company = lines[i - 5]
+                list_date = lines[i - 4]
+                ipo_price = lines[i - 3]
+                listing_price = lines[i - 2]
+                gain = lines[i]
 
-            report_sections.append(section)
+                report_rows.append(
+                    (
+                        company[:30],
+                        list_date[:12],
+                        ipo_price,
+                        listing_price,
+                        gain
+                    )
+                )
 
-    body = (
-        "INDIA IPO REPORT\n"
-        "========================\n\n"
-        f"Generated: {datetime.now()}\n\n"
+            except IndexError:
+                pass
+
+    body = []
+    body.append("INDIA IPO REPORT")
+    body.append("=" * 80)
+    body.append("")
+    body.append(
+        f"Generated: {datetime.now().strftime('%d-%b-%Y %H:%M')}"
+    )
+    body.append("")
+
+    body.append(
+        f"{'COMPANY':30} | {'DATE':12} | {'IPO':10} | {'LISTING':10} | GAIN"
     )
 
-    if report_sections:
+    body.append("-" * 80)
 
-        body += (
-            "Recent IPO Listing Records\n"
-            "-------------------------\n\n"
-        )
+    for row in report_rows[:25]:
 
-        body += "\n\n=================================\n\n".join(
-            report_sections[:20]
-        )
-
-    else:
-
-        body += (
-            "No IPO records found.\n"
-            "Source page loaded successfully."
+        body.append(
+            f"{row[0]:30} | "
+            f"{row[1]:12} | "
+            f"{row[2]:10} | "
+            f"{row[3]:10} | "
+            f"{row[4]}"
         )
 
     send_email(
-        "India IPO Daily Report",
-        body
+        "India IPO Report",
+        "\n".join(body)
     )
 
 
