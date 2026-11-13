@@ -1,3 +1,4 @@
+import os
 import yfinance as yf
 import smtplib
 from email.mime.text import MIMEText
@@ -6,9 +7,11 @@ from email.mime.text import MIMEText
 # YOUR GMAIL SETTINGS
 # ==========================
 
-EMAIL = "adityakiran4@gmail.com"
-APP_PASSWORD = "zpwtcgolszzbtllf"
-RECIPIENT = "adityakiran4@gmail.com"
+
+
+EMAIL = os.environ["EMAIL"]
+APP_PASSWORD = os.environ["APP_PASSWORD"]
+RECIPIENT = os.environ["RECIPIENT"]
 
 
 # ==========================
