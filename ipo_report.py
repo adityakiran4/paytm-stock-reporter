@@ -1,7 +1,11 @@
 import os
+import requests
+import pandas as pd
+from bs4 import BeautifulSoup
+from datetime import datetime, timedelta
 import smtplib
 from email.mime.text import MIMEText
-from datetime import datetime
+
 
 EMAIL = os.environ["EMAIL"]
 APP_PASSWORD = os.environ["APP_PASSWORD"]
@@ -29,28 +33,96 @@ def send_email(subject, body):
     smtp.quit()
 
 
-def ipo_report():
+def get_recent_ipos():
 
-    ipo_listings = [
-        ("Antala Industries", "11-Nov-2026"),
-        ("Vedant Poly Fabs", "09-Nov-2026"),
-        ("Johnsoncab Electricals", "06-Nov-2026"),
-        ("HGS India", "06-Nov-2026"),
-        ("Maxwell Engineering Solutions", "06-Nov-2026"),
-        ("Vectras Enprocon", "06-Nov-2026")
+    url = "https://www.motilaloswal.com/ipos"
+
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
+
+    html = requests.get(
+        url,
+        headers=headers,
+        timeout=30
+    ).text
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    text = soup.get_text("\n")
+
+    lines = [
+        x.strip()
+        for x in text.split("\n")
+        if x.strip()
     ]
 
-    body = "COMPANIES LISTED IN LAST 10 DAYS\n\n"
+    records = []
 
-    for company, listing_date in ipo_listings:
-        body += f"{company} - {listing_date}\n"
+    for i, line in enumerate(lines):
 
-    body += f"\nGenerated on: {datetime.now().strftime('%d-%b-%Y %H:%M')}"
+        if "Listed date" in line:
+
+            try:
+
+                company = lines[i - 1]
+
+                listing_date = line.replace(
+                    "Listed date", ""
+                ).strip()
+
+                listing_price = ""
+
+                gain = ""
+
+                for j in range(i, min(i + 5, len(lines))):
+
+                    if "₹" in lines[j]:
+                        listing_price = lines[j]
+
+                    if "%" in lines[j]:
+                        gain = lines[j]
+
+                records.append({
+                    "Company": company,
+                    "Listing Date": listing_date,
+                    "Price": listing_price,
+                    "Gain": gain
+                })
+
+            except:
+                pass
+
+    return records
+
+
+def create_report():
+
+    records = get_recent_ipos()
+
+    body = (
+        "INDIA IPO LISTINGS REPORT\n"
+        "Last 10 Days\n\n"
+    )
+
+    for row in records:
+
+        body += (
+            f"{row['Company']}\n"
+            f"Listing Date : {row['Listing Date']}\n"
+            f"Listing Price: {row['Price']}\n"
+            f"Listing Gain : {row['Gain']}\n\n"
+        )
+
+    body += (
+        f"\nGenerated: "
+        f"{datetime.now()}"
+    )
 
     send_email(
-        "IPO Listings - Last 10 Days",
+        "India IPO Listings Report",
         body
     )
 
 
-ipo_report()
+create_report()
